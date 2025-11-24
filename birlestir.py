@@ -1,5 +1,7 @@
 import streamlit as st
-from pypdf import PdfMerger, PdfReader, PdfWriter # Sadece bir kere import ediyoruz
+import sys
+sys.path.append("/mount/src/pypdf")  # pypdf.py veya klasörün yolu
+from pypdf import PdfMerger, PdfReader, PdfWriter
 from io import BytesIO
 from docx import Document
 import tempfile
