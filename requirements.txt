@@ -27,5 +27,4 @@ pytesseract
 PdfMerger
 pypdf
 python-docx
-docx2pdf
 streamlit-sortable
