@@ -12,7 +12,6 @@ Pillow
 seaborn
 python-bidi
 arabic-reshaper
-biopython>=1.78
 pandas
 tabula-py
 openpyxl
@@ -26,5 +25,3 @@ xlsxwriter
 pytesseract
 PdfMerger
 pypdf
-python-docx
-streamlit-sortable
