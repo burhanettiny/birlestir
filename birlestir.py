@@ -4,7 +4,6 @@ import tempfile
 from io import BytesIO
 import streamlit as st
 from docx import Document
-from streamlit_sortable import sortable_items
 
 # GitHub'dan alınan pypdf.py dosyası ile uyumlu import
 sys.path.append(os.path.dirname(__file__))  # birlestir.py ile aynı klasör
@@ -37,8 +36,9 @@ if not uploaded_files:
 
 # --- Dosya Sıralama ---
 file_names = [f.name for f in uploaded_files]
-st.subheader("Dosya sırası (sürükleyerek değiştirin)")
-sorted_file_names = sortable_items(file_names, key="file_sort")
+st.subheader("Dosya sırası")
+# Cloud ortamında sortable_items olmayacağı için sırayı manuel bırakıyoruz
+sorted_file_names = file_names
 sorted_files = [uploaded_files[file_names.index(name)] for name in sorted_file_names]
 st.markdown("---")
 
@@ -57,15 +57,14 @@ if pdf_files_in_list:
 
             st.write(f"Toplam sayfa: **{total_pages}**")
             page_list = [f"Sayfa {i+1}" for i in range(total_pages)]
-            st.write("Sayfaları sürükleyerek yeniden sıralayın veya seçerek silin.")
+            st.write("Sayfaları yeniden sıralama Cloud ortamında devre dışı.")
 
-            reordered = sortable_items(page_list, key=f"sort_pages_{pdf_manage_name}")
-            delete_pages = st.multiselect("Silinecek sayfalar", reordered)
+            # Silinecek sayfaları seçme
+            delete_pages = st.multiselect("Silinecek sayfalar", page_list)
 
             if st.button("📌 Yeni PDF Üret (Sayfa Silme / Taşıma)"):
                 writer = PdfWriter()
-                for page_name in reordered:
-                    idx = int(page_name.split()[1]) - 1
+                for idx, page_name in enumerate(page_list):
                     if page_name not in delete_pages:
                         writer.add_page(reader.pages[idx])
 
