@@ -12,16 +12,10 @@ Pillow
 seaborn
 python-bidi
 arabic-reshaper
-pandas
 tabula-py
 openpyxl
 pdfplumber
 xlsxwriter
 python-docx
-streamlit
-pillow
-pandas
-xlsxwriter
 pytesseract
-PdfMerger
 pypdf
