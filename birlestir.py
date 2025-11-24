@@ -1,16 +1,14 @@
-import streamlit as st
 import sys
 import os
 import tempfile
 from io import BytesIO
+import streamlit as st
 from docx import Document
-
-# GitHub'dan alınan pypdf yolunu ekle
-sys.path.append("/mount/src/pypdf")
-from pypdf import PdfMerger, PdfReader, PdfWriter
-
-# Drag & drop sıralama için
 from streamlit_sortable import sortable_items
+
+# GitHub'dan alınan pypdf.py dosyası ile uyumlu import
+sys.path.append(os.path.dirname(__file__))  # birlestir.py ile aynı klasör
+from pypdf import PdfMerger, PdfReader, PdfWriter
 
 # docx2pdf'i koşullu import et
 try:
@@ -21,7 +19,7 @@ except ImportError:
 
 st.set_page_config(page_title="Belge Birleştirici", page_icon="📎", layout="centered")
 st.title("📎 PDF & Word Birleştirici - Streamlit")
-st.markdown("Bu uygulama PDF ve Word (DOCX) dosyalarını yükleyip sürükle-bırak yöntemiyle sırasını belirleyerek tek bir dosya haline getirir.")
+st.markdown("PDF ve Word (DOCX) dosyalarını sürükle-bırak ile birleştirin.")
 st.markdown("---")
 
 # --- Dosya Yükleme ---
@@ -35,19 +33,6 @@ if not uploaded_files:
     st.info("Başlamak için PDF veya Word dosyalarını yükleyin.")
     st.markdown("---")
     st.caption("Not: Çok büyük dosyalarda bellek sınırları sorun oluşturabilir. Yerel çalıştırma daha stabil olabilir.")
-    st.markdown("""
-**Gereksinimler**:
-- `pip install streamlit`
-- `pip install pypdf`
-- `pip install python-docx`
-- `pip install streamlit-sortable`
-- **DOCX+PDF birleştirme için**: `pip install docx2pdf` (Microsoft Word veya LibreOffice gerekli)
-
-**Çalıştırma**:
-```
-streamlit run combine.py
-```
-""")
     st.stop()
 
 # --- Dosya Sıralama ---
