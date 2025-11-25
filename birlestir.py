@@ -29,7 +29,10 @@ if "uploaded_meta" not in st.session_state:
 # ---------------------------
 st.set_page_config(page_title="Belge Birleştirici", page_icon="📎", layout="centered")
 st.title("📎 PDF & Word Birleştirici — Drag & Drop Sıralama")
-st.markdown("PDF ve Word (.docx) dosyalarını yükleyin, PDF'lerde sayfa silme uygulayın; sürükle-bırak ile sıralamayı değiştirin.")
+st.markdown(
+    "PDF ve Word (.docx) dosyalarını yükleyin, PDF'lerde sayfa silme uygulayın; "
+    "sürükle-bırak ile sıralamayı değiştirebilirsiniz."
+)
 st.markdown("---")
 
 uploaded_files = st.file_uploader(
@@ -60,7 +63,6 @@ sorted_display_names = sortable_list(display_names)
 # sorted_display_names → session_meta sıralamasına dönüştür
 sorted_meta = []
 for name in sorted_display_names:
-    # index parantez içinden alınır
     idx = int(name.split("(")[-1].strip(")"))
     sorted_meta.append(st.session_state.uploaded_meta[idx])
 
@@ -116,7 +118,7 @@ if pdf_meta_list:
 st.markdown("---")
 
 # ---------------------------
-# PDF Birleştirme (düzenlenmiş sürümleri kullanır)
+# PDF Birleştirme
 # ---------------------------
 st.subheader("🔀 PDF'leri Birleştir (düzenlenmiş sürümler dahil)")
 pdfs_in_sorted = [m for m in sorted_meta if m["name"].lower().endswith(".pdf")]
@@ -172,7 +174,6 @@ if st.button("Word (DOCX) Birleştir", disabled=len(docx_in_sorted) == 0):
                 merged_doc.add_paragraph(p.text)
             first = False
 
-        # temizle
         for p in tmp_paths:
             try:
                 os.remove(p)
@@ -200,11 +201,14 @@ st.markdown("---")
 st.subheader("📄 DOCX + PDF → Tek PDF (opsiyonel)")
 
 if DOCX2PDF_AVAILABLE:
-    st.info("docx2pdf yüklü; ancak Streamlit Cloud'da Word olmayabilir.")
+    st.info("docx2pdf yüklü; fakat Streamlit Cloud'da Word olmayabilir.")
 else:
     st.warning("docx2pdf yüklü değil veya ortam desteklemiyor. DOCX→PDF devre dışı.")
 
-if st.button("DOCX + PDF → Tek PDF (sıra bazlı)", disabled=(len([m for m in sorted_meta if m["name"].lower().endswith(('.pdf', '.docx'))]) == 0)):
+if st.button(
+    "DOCX + PDF → Tek PDF (sıra bazlı)",
+    disabled=(len([m for m in sorted_meta if m["name"].lower().endswith(('.pdf', '.docx'))]) == 0)
+):
     try:
         merger = PdfMerger()
         tmp_to_cleanup = []
@@ -242,7 +246,6 @@ if st.button("DOCX + PDF → Tek PDF (sıra bazlı)", disabled=(len([m for m in 
         st.success("Tüm dosyalar tek PDF hâline getirildi!")
         st.download_button("📥 Hepsini Tek PDF İndir", out, "merged_all.pdf", mime="application/pdf")
 
-        # cleanup
         for p in tmp_to_cleanup:
             try:
                 os.remove(p)
@@ -253,4 +256,4 @@ if st.button("DOCX + PDF → Tek PDF (sıra bazlı)", disabled=(len([m for m in 
         st.error(f"DOCX+PDF → PDF dönüşüm/birleştirme hatası: {e}")
 
 st.markdown("---")
-st.caption("Not: Streamlit Cloud bellek/süre sınırlarına dikkat. Büyük dosyaları yerelde işleyin.")
+st.caption("Not: Streamlit Cloud bellek/süre sınırlamalarına dikkat. Büyük dosyaları yerelde işleyin.")
