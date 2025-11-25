@@ -255,5 +255,5 @@ if st.button(
 st.markdown("---")
 st.caption("Not: Streamlit Cloud bellek/süre sınırlamalarına dikkat. Büyük dosyaları yerelde işleyin.")
 st.markdown("---")
-st.markdown("📬 Contact: [Burhanettin Yalçınkaya](mailto:burhanettin@gmail.com)")
+st.markdown("📬 Contact: [Burhanettin Yalçınkaya](mailto:mailtoburhanettin@gmail.com)")
 
