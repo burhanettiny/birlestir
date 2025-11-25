@@ -45,8 +45,8 @@ sorted_file_names = st.multiselect(
     default=file_names
 )
 
-sorted_files = [uploaded_files[file_names.index(n)] for n in sorted_file_names]
-
+processed_files = st.session_state.processed_files
+sorted_files = [processed_files[n] for n in sorted_file_names]
 st.markdown("---")
 
 
@@ -96,6 +96,16 @@ if pdf_files:
         st.error(f"Hata: {e}")
 
 st.markdown("---")
+
+# --- SİLİNEN PDF'İ BİRLEŞTİRME LİSTESİNE EKLE ---
+# uploaded_files yerine processed_files listesi kullanılacak
+if "processed_files" not in st.session_state:
+    st.session_state.processed_files = {f.name: f for f in uploaded_files}
+
+# bu PDF artık düzenlenmiş halini kullanacak
+edited_pdf_data = out_pdf.getvalue()
+st.session_state.processed_files[selected_pdf_name] = BytesIO(edited_pdf_data)
+st.session_state.processed_files[selected_pdf_name].name = selected_pdf_name
 
 
 # --------------------------------------------------------
@@ -178,7 +188,7 @@ if st.button("📝 Word (DOCX) Birleştir", disabled=len(word_files_to_merge) ==
 # --------------------------------------------------------
 
 if DOCX2PDF_AVAILABLE:
-    st.info("DOCX + PDF birleşimi için docx2pdf etkin, ancak Streamlit Cloud’da Word kurulu olmadığı için genelde çalışmaz.")
+    st.info("DOCX + PDF birleşimi için docx2pdf etkin, ancak Streamlit Cloud’da Word kurulu olmadığı için genelde çalışmaz. Umarım ileride bu hizmeti de verebiliriz")
 else:
     st.warning("`docx2pdf` yüklenmediği için DOCX → PDF dönüşümü devre dışı.")
 
