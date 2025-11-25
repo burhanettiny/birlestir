@@ -26,7 +26,7 @@ if "uploaded_meta" not in st.session_state:
 # Streamlit UI
 # ---------------------------
 st.set_page_config(page_title="Belge Birleştirici", page_icon="📎", layout="centered")
-st.title("📎 PDF & Word Birleştirici — Tam Entegre")
+st.title("📎 PDF & Word Birleştirici")
 st.markdown("PDF ve Word (.docx) dosyalarını yükleyin, PDF'lerde sayfa silme uygulayın; birleştirmede düzenlenmiş hali kullanılsın.")
 st.markdown("---")
 
@@ -254,3 +254,6 @@ if st.button(
 
 st.markdown("---")
 st.caption("Not: Streamlit Cloud bellek/süre sınırlamalarına dikkat. Büyük dosyaları yerelde işleyin.")
+st.markdown("---")
+st.markdown("📬 Contact: [Burhanettin Yalçınkaya](mailto:burhanettin@gmail.com)")
+
