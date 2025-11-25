@@ -49,22 +49,18 @@ if not st.session_state.uploaded_meta:
     st.stop()
 
 # Kullanıcıya sıralama seçeneği sun
-# Önce streamlit-sortable kurulu olmalı: pip install streamlit-sortable
-from streamlit_sortable import sortable_list
-
-# Kullanıcıya sıralama seçeneği sun — drag-and-drop ile
-choices = [m["name"] for m in st.session_state.uploaded_meta]
-sorted_names = sortable_list(
+choices = [f'{m["name"]} ({i})' for i, m in enumerate(st.session_state.uploaded_meta)]
+sorted_choice = st.multiselect(
+    "Birleştirme sırası — üstten alta (seçim yapın, varsayılan tüm dosyalar)",
     choices,
-    key="file_sortable",
-    direction="vertical"
+    default=choices
 )
 
-# Sorted_meta oluştur
-name_to_meta = {m["name"]: m for m in st.session_state.uploaded_meta}
-sorted_meta = [name_to_meta[name] for name in sorted_names]
-
-st.markdown("---")
+if not sorted_choice:
+    sorted_meta = st.session_state.uploaded_meta.copy()
+else:
+    ordered_indices = [int(c.split("(")[-1].strip(")")) for c in sorted_choice]
+    sorted_meta = [st.session_state.uploaded_meta[i] for i in ordered_indices]
 
 
 # Ayrıştırılmış listeler
