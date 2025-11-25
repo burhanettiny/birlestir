@@ -1,12 +1,8 @@
 import os
 import tempfile
 from io import BytesIO
-
 import streamlit as st
 from docx import Document
-
-# Eğer projede local pypdf varsa normal 'from pypdf import ...' çalışır;
-# yoksa pypdf (pip install pypdf) yüklenmiş olmalı.
 from pypdf import PdfMerger, PdfReader, PdfWriter
 
 # DOCX->PDF (Windows Word COM) kontrollü import
@@ -22,7 +18,6 @@ except Exception:
 if "processed_pdfs" not in st.session_state:
     # processed_pdfs: { file_key: bytes_of_edited_pdf }
     st.session_state.processed_pdfs = {}
-
 if "uploaded_meta" not in st.session_state:
     # uploaded_meta: list of dicts {key, name, file (UploadedFile)}
     st.session_state.uploaded_meta = []
@@ -30,17 +25,9 @@ if "uploaded_meta" not in st.session_state:
 # ---------------------------
 # Streamlit UI
 # ---------------------------
-st.set_page_config(
-    page_title="Belge Birleştirici",
-    page_icon="📎",
-    layout="centered"
-)
-
+st.set_page_config(page_title="Belge Birleştirici", page_icon="📎", layout="centered")
 st.title("📎 PDF & Word Birleştirici — Tam Entegre")
-st.markdown(
-    "PDF ve Word (.docx) dosyalarını yükleyin, PDF'lerde sayfa silme uygulayın; "
-    "birleştirmede düzenlenmiş hali kullanılsın."
-)
+st.markdown("PDF ve Word (.docx) dosyalarını yükleyin, PDF'lerde sayfa silme uygulayın; birleştirmede düzenlenmiş hali kullanılsın.")
 st.markdown("---")
 
 uploaded_files = st.file_uploader(
@@ -53,7 +40,7 @@ uploaded_files = st.file_uploader(
 if uploaded_files:
     meta = []
     for i, f in enumerate(uploaded_files):
-        key = f"{f.name}_{i}_{len(f.getbuffer())}"  # benzersiz anahtar
+        key = f"{f.name}_{i}_{len(f.getbuffer())}"
         meta.append({"key": key, "name": f.name, "file": f})
     st.session_state.uploaded_meta = meta
 
@@ -69,6 +56,7 @@ sorted_choice = st.multiselect(
     default=choices
 )
 
+# If user didn't change selection, default ordering is upload order
 if not sorted_choice:
     sorted_meta = st.session_state.uploaded_meta.copy()
 else:
@@ -77,11 +65,12 @@ else:
 
 st.markdown("---")
 
-# ---------------------------
-# PDF Sayfa Silme / Düzenleme
-# ---------------------------
+# Ayrıştırılmış listeler
 pdf_meta_list = [m for m in st.session_state.uploaded_meta if m["name"].lower().endswith(".pdf")]
 
+# ---------------------------
+# PDF Sayfa Silme / Düzenleme (ve saklama)
+# ---------------------------
 if pdf_meta_list:
     st.subheader("📄 PDF Sayfa Yönetimi (silme)")
     pdf_choice_map = {f'{m["name"]} ({i})': m for i, m in enumerate(pdf_meta_list)}
@@ -103,16 +92,17 @@ if pdf_meta_list:
             if st.button("📌 Düzenlemeyi Uygula ve Kaydet", key=f"save_edit_{selected_meta['key']}"):
                 writer = PdfWriter()
                 for idx in range(total_pages):
-                    if page_labels[idx] in delete_pages:
+                    label = page_labels[idx]
+                    if label in delete_pages:
                         continue
                     writer.add_page(reader.pages[idx])
 
                 out_pdf = BytesIO()
                 writer.write(out_pdf)
                 out_pdf.seek(0)
+
                 st.session_state.processed_pdfs[selected_meta["key"]] = out_pdf.getvalue()
                 st.success("Düzenleme kaydedildi — Bu dosya artık birleştirmede düzenlenmiş haliyle kullanılacak.")
-
                 st.download_button(
                     "📥 Düzenlenmiş PDF'i indir",
                     data=out_pdf,
@@ -136,7 +126,8 @@ if st.button("PDF'leri Birleştir", disabled=len(pdfs_in_sorted) == 0):
         for meta in pdfs_in_sorted:
             key = meta["key"]
             if key in st.session_state.processed_pdfs:
-                fobj = BytesIO(st.session_state.processed_pdfs[key])
+                b = st.session_state.processed_pdfs[key]
+                fobj = BytesIO(b)
                 fobj.seek(0)
                 merger.append(fobj)
             else:
@@ -181,7 +172,6 @@ if st.button("Word (DOCX) Birleştir", disabled=len(docx_in_sorted) == 0):
                 merged_doc.add_paragraph(p.text)
             first = False
 
-        # temizle
         for p in tmp_paths:
             try:
                 os.remove(p)
@@ -209,10 +199,7 @@ st.markdown("---")
 st.subheader("📄 DOCX + PDF → Tek PDF (opsiyonel)")
 
 if DOCX2PDF_AVAILABLE:
-    st.info(
-        "docx2pdf yüklü; fakat Streamlit Cloud'da Microsoft Word yüklü olmayabilir. "
-        "Lokal makinede çalıştırırken kullanılabilir."
-    )
+    st.info("docx2pdf yüklü; fakat Streamlit Cloud'da Microsoft Word yüklü olmayabilir. Lokal makinede çalıştırırken kullanılabilir.")
 else:
     st.warning("docx2pdf yüklü değil veya ortam desteklemiyor. DOCX→PDF dönüşümü devre dışı.")
 
@@ -243,14 +230,12 @@ if st.button(
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
                     tmp.write(meta["file"].getbuffer())
                     tmp_docx = tmp.name
-
                 tmp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
                 tmp_pdf_path = tmp_pdf.name
                 tmp_pdf.close()
-
                 tmp_to_cleanup.extend([tmp_docx, tmp_pdf_path])
-                docx2pdf.convert(tmp_docx, tmp_pdf_path)
 
+                docx2pdf.convert(tmp_docx, tmp_pdf_path)
                 with open(tmp_pdf_path, "rb") as conv_f:
                     merger.append(conv_f)
 
@@ -261,13 +246,11 @@ if st.button(
         st.success("Tüm dosyalar tek PDF hâline getirildi!")
         st.download_button("📥 Hepsini Tek PDF İndir", out, "merged_all.pdf", mime="application/pdf")
 
-        # cleanup
         for p in tmp_to_cleanup:
             try:
                 os.remove(p)
             except Exception:
                 pass
-
     except Exception as e:
         st.error(f"DOCX+PDF → PDF dönüşüm/birleştirme hatası: {e}")
 
