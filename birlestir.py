@@ -39,10 +39,20 @@ uploaded_files = st.file_uploader(
 # Eğer yeni yükleme yapıldıysa session_state.uploaded_meta güncelle
 if uploaded_files:
     meta = []
+    new_keys = []
+
     for i, f in enumerate(uploaded_files):
         key = f"{f.name}_{i}_{len(f.getbuffer())}"
         meta.append({"key": key, "name": f.name, "file": f})
+        new_keys.append(key)
+
+    # Yeni yükleme yapıldıysa eski işlenmiş PDF'leri temizle
     st.session_state.uploaded_meta = meta
+    st.session_state.processed_pdfs = {
+        k: v for k, v in st.session_state.processed_pdfs.items()
+        if k in new_keys
+    }
+
 
 if not st.session_state.uploaded_meta:
     st.info("Başlamak için PDF veya Word dosyalarını yükleyin.")
