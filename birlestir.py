@@ -8,25 +8,19 @@ from pypdf import PdfMerger, PdfReader, PdfWriter
 st.set_page_config(page_title="Belge Birleştirici", page_icon="📎")
 
 # ---------------------------
-# SESSION
+# RESET (Cloud için kritik)
 # ---------------------------
-if "processed_pdfs" not in st.session_state:
-    st.session_state.processed_pdfs = {}
-
-if "uploader_keys" not in st.session_state:
-    st.session_state.uploader_keys = set()
-
-# ---------------------------
-# UI
-# ---------------------------
-st.title("📎 PDF & Word Birleştirici")
-
-if st.button("♻️ Tam Sıfırla"):
-    st.session_state.clear()
+if st.button("♻️ Tam Sıfırla (Cloud Cache Temizle)"):
+    for k in list(st.session_state.keys()):
+        del st.session_state[k]
+    st.cache_data.clear()
+    st.cache_resource.clear()
     st.rerun()
 
+st.title("📎 PDF & Word Birleştirici")
+
 uploaded_files = st.file_uploader(
-    "PDF veya Word yükleyin",
+    "PDF veya Word (.docx) yükleyin",
     type=["pdf", "docx"],
     accept_multiple_files=True
 )
@@ -36,41 +30,35 @@ if not uploaded_files:
     st.stop()
 
 # ---------------------------
-# SADECE AKTİF DOSYALARI AL
+# AKTİF DOSYALARI OKU (HER SEFER)
 # ---------------------------
-current_files = []
-current_keys = set()
-
+active_files = []
 for i, f in enumerate(uploaded_files):
-    key = f"{f.name}_{len(f.getbuffer())}_{i}"
-    current_files.append({"key": key, "name": f.name, "file": f})
-    current_keys.add(key)
 
-# RAM’de kalan eski processed_pdfs → TEMİZLE
-st.session_state.processed_pdfs = {
-    k: v for k, v in st.session_state.processed_pdfs.items()
-    if k in current_keys
-}
+    # merged çıktıyı tekrar merge'e sokma
+    if f.name.startswith("merged"):
+        continue
 
-st.session_state.uploader_keys = current_keys
+    active_files.append({
+        "name": f.name,
+        "bytes": f.getvalue()
+    })
 
 # ---------------------------
 # PDF SAYFA SİL
 # ---------------------------
-pdfs = [m for m in current_files if m["name"].lower().endswith(".pdf")]
+pdfs = [f for f in active_files if f["name"].lower().endswith(".pdf")]
 
 if pdfs:
     st.subheader("PDF Sayfa Sil")
 
-    names = [m["name"] for m in pdfs]
+    names = [f["name"] for f in pdfs]
     choice = st.selectbox("PDF seç", ["Seçiniz"] + names)
 
     if choice != "Seçiniz":
-        meta = next(m for m in pdfs if m["name"] == choice)
-        f = meta["file"]
+        pdf = next(f for f in pdfs if f["name"] == choice)
 
-        f.seek(0)
-        reader = PdfReader(f)
+        reader = PdfReader(BytesIO(pdf["bytes"]))
         total = len(reader.pages)
 
         labels = [f"Sayfa {i+1}" for i in range(total)]
@@ -78,6 +66,7 @@ if pdfs:
 
         if st.button("Kaydet"):
             writer = PdfWriter()
+
             for i in range(total):
                 if labels[i] not in delete_pages:
                     writer.add_page(reader.pages[i])
@@ -86,11 +75,12 @@ if pdfs:
             writer.write(out)
             out.seek(0)
 
-            st.session_state.processed_pdfs[meta["key"]] = out.getvalue()
+            # Güncel PDF’i RAM’de güncelle
+            pdf["bytes"] = out.getvalue()
             st.success("Kaydedildi")
 
 # ---------------------------
-# PDF MERGE (KESİN TEMİZ)
+# PDF MERGE (SADECE AKTİF)
 # ---------------------------
 st.subheader("PDF Birleştir")
 
@@ -98,26 +88,17 @@ if st.button("PDF'leri Birleştir"):
 
     merger = PdfMerger()
 
-    for meta in current_files:
-
-        if not meta["name"].lower().endswith(".pdf"):
+    for f in active_files:
+        if not f["name"].lower().endswith(".pdf"):
             continue
-
-        key = meta["key"]
-
-        if key in st.session_state.processed_pdfs:
-            merger.append(BytesIO(st.session_state.processed_pdfs[key]))
-        else:
-            f = meta["file"]
-            f.seek(0)
-            merger.append(f)
+        merger.append(BytesIO(f["bytes"]))
 
     out = BytesIO()
     merger.write(out)
     merger.close()
     out.seek(0)
 
-    st.success("Birleştirildi")
+    st.success("Birleştirildi (sadece güncel dosyalar)")
     st.download_button("PDF indir", out, "merged.pdf")
 
 # ---------------------------
@@ -130,13 +111,12 @@ if st.button("Word Birleştir"):
     merged = Document()
     first = True
 
-    for meta in current_files:
-
-        if not meta["name"].lower().endswith(".docx"):
+    for f in active_files:
+        if not f["name"].lower().endswith(".docx"):
             continue
 
         with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
-            tmp.write(meta["file"].getbuffer())
+            tmp.write(f["bytes"])
             path = tmp.name
 
         doc = Document(path)
@@ -154,7 +134,7 @@ if st.button("Word Birleştir"):
     merged.save(out)
     out.seek(0)
 
-    st.success("Word birleştirildi")
+    st.success("Word birleştirildi (sadece güncel dosyalar)")
     st.download_button("DOCX indir", out, "merged.docx")
 
-st.caption("Artık geçmiş dosyalar merge edilmez.")
+st.caption("Streamlit Cloud: eski dosyalar artık kesinlikle merge edilmez.")
